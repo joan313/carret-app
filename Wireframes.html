@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>carret · wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111;
+    --paper: #ffffff;
+    --orange: #C2441C;
+    --mute: #9a958e;
+    --line: #d9d4cc;
+    --shot: #1a1a1a;
+    --sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+    --hand: 'Caveat', cursive;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--ink);
+    background: #f4f1ec;
+    min-height: 100vh;
+  }
+
+  /* Page chrome */
+  .page {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+  .page-title {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .page-title h1 {
+    margin: 0; font-weight: 700; font-size: 30px; letter-spacing: -0.02em;
+    color: #2a251f;
+  }
+  .page-title .sub {
+    font-family: var(--hand);
+    font-size: 22px; color: #6a6258;
+    margin-top: 2px;
+  }
+  .page-title .accent { color: var(--orange); }
+
+  .stage {
+    display: flex;
+    gap: 56px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stage-col {
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .stage-col .caption {
+    font-family: var(--hand);
+    font-size: 20px;
+    color: #4a423a;
+    line-height: 1.05;
+    text-align: center;
+    max-width: 280px;
+  }
+  .stage-col .caption small {
+    display: block;
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8a8278;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  /* ════════ Phone shell ═══════════════════════════════════════════════ */
+
+  .phone {
+    position: relative;
+    width: 320px;
+    height: 680px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 3px 4px 0 rgba(0,0,0,0.06);
+  }
+  .phone::before { /* notch */
+    content: '';
+    position: absolute;
+    top: 10px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 16px;
+    background: var(--ink);
+    border-radius: 12px;
+    z-index: 5;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 36px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* status bar */
+  .status {
+    height: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    font-size: 10px; font-weight: 600; color: var(--ink);
+    letter-spacing: 0.04em;
+    flex: 0 0 auto;
+  }
+  .status .dots { display: flex; gap: 3px; }
+  .status .dots span { width: 4px; height: 4px; border-radius: 50%; background: var(--ink); }
+
+  /* body fills between status and nav */
+  .body {
+    flex: 1;
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+
+  /* ════════ CAMERA ════════════════════════════════════════════════════ */
+
+  .cam-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 22px 12px;
+    font-size: 12px;
+  }
+  .cam-roll { font-weight: 600; letter-spacing: 0.01em; }
+  .cam-count { font-variant-numeric: tabular-nums; color: var(--mute); font-weight: 500; }
+
+  .viewfinder {
+    flex: 1;
+    background: var(--shot);
+    margin: 0 16px;
+    border-radius: 8px;
+    min-height: 0;
+    /* nothing inside per spec */
+  }
+
+  .cam-bottom {
+    padding: 22px 0 26px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .shutter {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 0 3px var(--paper), 0 0 0 4.5px var(--ink);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.08s ease;
+  }
+  .shutter:active { transform: scale(0.94); }
+
+  /* ════════ ROLL ══════════════════════════════════════════════════════ */
+
+  .roll-head {
+    display: flex; flex-direction: column;
+    gap: 2px;
+    padding: 18px 22px 14px;
+  }
+  .roll-head .name { font-size: 17px; font-weight: 600; letter-spacing: 0.005em; }
+  .roll-head .meta { font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; }
+
+  .roll-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: min-content;
+    gap: 8px;
+    padding: 0 18px 18px;
+  }
+  .roll-grid::-webkit-scrollbar { width: 0; }
+  .cell {
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    cursor: default;
+  }
+  .cell.empty {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    color: var(--mute);
+  }
+  .cell.shot {
+    background: var(--shot);
+    color: transparent;
+  }
+  .cell.shot::after {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+  }
+  .cell.next {
+    background: var(--orange);
+    color: var(--paper);
+    font-size: 24px;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  /* ════════ DATES ═════════════════════════════════════════════════════ */
+
+  .year-strip {
+    display: flex; justify-content: space-between;
+    padding: 18px 22px 4px;
+    font-size: 10px; color: var(--mute);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    font-weight: 500;
+  }
+  .year-strip .m { padding: 4px 0; cursor: pointer; transition: color 0.12s; }
+  .year-strip .m.active {
+    color: var(--ink);
+    font-weight: 700;
+    border-bottom: 1.5px solid var(--orange);
+  }
+
+  .cal-head {
+    padding: 14px 22px 8px;
+  }
+  .cal-head .month {
+    font-size: 22px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1;
+  }
+  .cal-head .year {
+    font-size: 11px; color: var(--mute); margin-top: 2px; font-weight: 500;
+  }
+
+  .weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    padding: 8px 18px 4px;
+    font-size: 9px; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .days {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    padding: 4px 18px 18px;
+    gap: 4px 0;
+    text-align: center;
+  }
+  .day {
+    aspect-ratio: 1 / 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    position: relative;
+    z-index: 0;
+  }
+  .day.muted { color: #cdc6bd; }
+  .day.shot {
+    color: var(--paper);
+    font-weight: 500;
+  }
+  .day.shot::before {
+    content: '';
+    position: absolute;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--orange);
+    z-index: -1;
+  }
+  .day.today {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .day.today::before {
+    content: '';
+    position: absolute;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    z-index: -1;
+  }
+
+  /* ════════ BOTTOM NAV ════════════════════════════════════════════════ */
+
+  .nav {
+    flex: 0 0 auto;
+    height: 60px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    background: var(--paper);
+    padding-bottom: 6px; /* home-indicator space */
+  }
+  .nav-item {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    border: none; background: transparent;
+    cursor: pointer;
+    padding: 6px 0 0;
+    font-family: var(--sans);
+    color: var(--mute);
+    transition: color 0.12s;
+    position: relative;
+  }
+  .nav-item:hover { color: #5a5249; }
+  .nav-item.active { color: var(--orange); }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 24px; height: 2px;
+    background: var(--orange);
+    border-radius: 0 0 2px 2px;
+  }
+  .nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .nav-item .label {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* When camera screen is active, the nav still shows but the shutter
+     needs less bottom padding so it doesn't kiss the nav. */
+  .cam-bottom { padding: 14px 0 16px; }
+
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-title">
+    <h1>carret <span class="accent">·</span> wireframes</h1>
+    <div class="sub">three screens · one nav · roll opens first</div>
+  </div>
+
+  <div id="root"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react">
+
+const { useState } = React;
+
+// ─── Icon set (minimal line glyphs) ──────────────────────────────────
+
+const IconCamera = () => (
+  <svg viewBox="0 0 24 24">
+    <path d="M3 7.5h3.5L8 5.5h8L17.5 7.5H21v11.5H3z" strokeLinejoin="round"/>
+    <circle cx="12" cy="13" r="3.5"/>
+  </svg>
+);
+const IconRoll = () => (
+  <svg viewBox="0 0 24 24">
+    <rect x="3.5" y="3.5" width="6" height="6" rx="0.5"/>
+    <rect x="14.5" y="3.5" width="6" height="6" rx="0.5"/>
+    <rect x="3.5" y="14.5" width="6" height="6" rx="0.5"/>
+    <rect x="14.5" y="14.5" width="6" height="6" rx="0.5"/>
+  </svg>
+);
+const IconDates = () => (
+  <svg viewBox="0 0 24 24">
+    <rect x="3.5" y="5.5" width="17" height="15" rx="1.5"/>
+    <path d="M3.5 10h17"/>
+    <path d="M8 3.5v4M16 3.5v4"/>
+  </svg>
+);
+
+// ─── Bottom nav ─────────────────────────────────────────────────────
+
+function Nav({ active, onChange }) {
+  const items = [
+    { id: 'camera', label: 'Camera', Icon: IconCamera },
+    { id: 'roll',   label: 'Roll',   Icon: IconRoll },
+    { id: 'dates',  label: 'Dates',  Icon: IconDates },
+  ];
+  return (
+    <nav className="nav">
+      {items.map(({ id, label, Icon }) => (
+        <button
+          key={id}
+          className={`nav-item ${active === id ? 'active' : ''}`}
+          onClick={() => onChange(id)}
+        >
+          <Icon />
+          <span className="label">{label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ─── Screens ────────────────────────────────────────────────────────
+
+function CameraScreen() {
+  return (
+    <>
+      <div className="cam-top">
+        <span className="cam-roll">spring · 26</span>
+        <span className="cam-count">14/36</span>
+      </div>
+      <div className="viewfinder"></div>
+      <div className="cam-bottom">
+        <button className="shutter" aria-label="shutter"></button>
+      </div>
+    </>
+  );
+}
+
+// 14 shots taken (01–14), 15 is next (+), 16–36 are empty.
+function cellState(n) {
+  if (n <= 14) return 'shot';
+  if (n === 15) return 'next';
+  return 'empty';
+}
+
+function RollScreen() {
+  const cells = Array.from({ length: 36 }, (_, i) => i + 1);
+  return (
+    <>
+      <div className="roll-head">
+        <span className="name">spring · 26</span>
+        <span className="meta">roll 03 — 14 of 36</span>
+      </div>
+      <div className="roll-grid">
+        {cells.map(n => {
+          const state = cellState(n);
+          return (
+            <div key={n} className={`cell ${state}`}>
+              {state === 'next' ? '+' : state === 'empty' ? String(n).padStart(2, '0') : ''}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// May 2026, today = May 15 (Friday), leading Sun Apr 26..Thu Apr 30
+const LEADING = [26, 27, 28, 29, 30];
+const TRAILING = [1, 2, 3, 4, 5, 6];
+const SHOT_DAYS = new Set([2, 5, 9, 11, 14, 22, 28]);
+const TODAY = 15;
+
+function DatesScreen() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const cells = [];
+  LEADING.forEach(d => cells.push({ n: d, muted: true }));
+  for (let d = 1; d <= 31; d++) {
+    cells.push({ n: d, shot: SHOT_DAYS.has(d), today: d === TODAY });
+  }
+  let i = 0;
+  while (cells.length < 42) cells.push({ n: TRAILING[i++], muted: true });
+
+  return (
+    <>
+      <div className="year-strip">
+        {months.map(m => (
+          <span key={m} className={`m ${m === 'May' ? 'active' : ''}`}>{m}</span>
+        ))}
+      </div>
+      <div className="cal-head">
+        <div className="month">May 2026</div>
+      </div>
+      <div className="weekdays">
+        {['S','M','T','W','T','F','S'].map((d, idx) => <span key={idx}>{d}</span>)}
+      </div>
+      <div className="days">
+        {cells.map((c, idx) => (
+          <div
+            key={idx}
+            className={`day ${c.muted ? 'muted' : ''} ${c.shot ? 'shot' : ''} ${c.today ? 'today' : ''}`}
+          >
+            {c.n}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ─── Phone (interactive) ────────────────────────────────────────────
+
+function Phone() {
+  const [active, setActive] = useState('roll'); // Roll is the main/default
+  return (
+    <div className="phone" data-screen-label={`carret · ${active}`}>
+      <div className="screen">
+        <div className="status">
+          <span>9:41</span>
+          <span className="dots"><span></span><span></span><span></span></span>
+        </div>
+        <div className="body">
+          {active === 'camera' && <CameraScreen />}
+          {active === 'roll'   && <RollScreen />}
+          {active === 'dates'  && <DatesScreen />}
+        </div>
+        <Nav active={active} onChange={setActive} />
+      </div>
+    </div>
+  );
+}
+
+// ─── App ────────────────────────────────────────────────────────────
+
+function App() {
+  return (
+    <div className="stage">
+      <div className="stage-col">
+        <Phone />
+        <div className="caption">
+          <small>interactive</small>
+          tap the bottom nav<br/>to switch screens
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+</script>
+</body>
+</html>
