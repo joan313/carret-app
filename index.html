@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Carret">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#ffffff">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon.svg">
   <title>Carret</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -130,6 +134,29 @@
       line-height: 1.6;
     }
 
+    /* Camera flip button */
+    .cam-flip {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      z-index: 10;
+      transition: opacity 0.15s;
+    }
+    .cam-flip:active { opacity: 0.6; }
+
     .cam-bottom {
       padding: 1.25rem 0 0.75rem;
       display: flex;
@@ -223,19 +250,37 @@
       border-radius: 50%;
       background: rgba(255,255,255,0.28);
     }
-    .cell.taken.unlocked {
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 0.1s, opacity 0.1s;
-    }
-    .cell.taken.unlocked:active { transform: scale(0.93); opacity: 0.7; }
     .cell.next {
       background: var(--orange);
       color: white;
       font-size: 1.5rem;
       font-weight: 300;
       line-height: 1;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 0.1s, opacity 0.1s;
     }
+    .cell.next:active { transform: scale(0.92); opacity: 0.8; }
+
+    /* ── Reveal animation ── */
+    @keyframes develop {
+      0%   { filter: brightness(0.04) saturate(0); }
+      35%  { filter: brightness(0.25) saturate(0.1); }
+      70%  { filter: brightness(0.75) saturate(0.6); }
+      100% { filter: brightness(1) saturate(1); }
+    }
+    .cell.revealed {
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      animation: develop 1.3s ease forwards;
+      animation-fill-mode: backwards;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    .cell.revealed:active { transform: scale(0.93); opacity: 0.75; }
 
     /* ── Banners ── */
     .full-banner {
@@ -274,6 +319,7 @@
       gap: 0.625rem;
       justify-content: center;
       align-items: center;
+      flex-shrink: 0;
     }
     .btn-secondary {
       padding: 0.625rem 1.25rem;
@@ -316,14 +362,8 @@
       font-weight: 700;
       border-bottom: 1.5px solid var(--orange);
     }
-
     .cal-head { padding: 0.625rem 1.25rem 0.25rem; }
-    .cal-head .month {
-      font-size: 1.375rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
+    .cal-head .month { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.01em; }
     .weekdays {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -480,15 +520,16 @@
     const SUPABASE_URL = 'https://vkjjitezqzxcqbhmngos.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZramppdGV6cXp4Y3FiaG1uZ29zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NjI3NTIsImV4cCI6MjA5NDQzODc1Mn0.tOMZJvEQv1OyFOs1Tt4-oizHDFvJRJtlQxgAuE8skWc';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const TOTAL = 36;
+    const TOTAL = 26;
 
-    let roll = null;        // { id, created_at, completed }
-    let photos = [];        // [{ id, taken_at }]
-    let imgCache = {};      // photo_id → data-URL
-    let shots = 0;
-    let screen = 'roll';
+    let roll        = null;   // { id, created_at, completed }
+    let photos      = [];     // [{ id, taken_at }]
+    let imgCache    = {};     // photo_id → data-URL
+    let shots       = 0;
+    let screen      = 'roll';
     let videoStream = null;
-    let isSaving = false;
+    let isSaving    = false;
+    let facingMode  = 'environment';
 
     // ── Clock ──
     function tick() {
@@ -500,10 +541,10 @@
     tick();
     setInterval(tick, 30000);
 
-    // ── Loading / error ──
-    function showLoading() {
+    // ── UI helpers ──
+    function showLoading(msg) {
       document.getElementById('body').innerHTML =
-        `<div class="loading-screen"><div class="spinner"></div><div class="loading-label">Carregant…</div></div>`;
+        `<div class="loading-screen"><div class="spinner"></div><div class="loading-label">${msg || 'Carregant…'}</div></div>`;
     }
     function showErr(msg) {
       document.getElementById('body').innerHTML =
@@ -542,7 +583,7 @@
           .order('taken_at', { ascending: true });
         if (error) throw error;
         photos = data || [];
-        shots = photos.length;
+        shots  = photos.length;
         go('roll');
       } catch(e) {
         console.error(e);
@@ -557,10 +598,10 @@
         const { data, error } = await db.from('rolls')
           .insert({ completed: false }).select().single();
         if (error) throw error;
-        roll = data;
-        photos = [];
+        roll     = data;
+        photos   = [];
         imgCache = {};
-        shots = 0;
+        shots    = 0;
         localStorage.setItem('carret_roll_id', roll.id);
         go('camera');
       } catch(e) {
@@ -576,8 +617,8 @@
       try {
         videoStream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
+            facingMode: { ideal: facingMode },
+            width:  { ideal: 1280 },
             height: { ideal: 720 }
           },
           audio: false
@@ -598,6 +639,12 @@
       }
     }
 
+    async function flipCamera() {
+      facingMode = facingMode === 'environment' ? 'user' : 'environment';
+      stopCamera();
+      await startCamera();
+    }
+
     async function takeShot() {
       if (shots >= TOTAL || isSaving) return;
       const vid = document.getElementById('cam-video');
@@ -614,10 +661,10 @@
         setTimeout(() => flash.classList.remove('active'), 80);
       }
 
-      // Capture frame → JPEG base64
+      // Capture → JPEG base64
       const canvas = document.createElement('canvas');
       const max = 1280;
-      const r = Math.min(max / vid.videoWidth, max / vid.videoHeight, 1);
+      const r   = Math.min(max / vid.videoWidth, max / vid.videoHeight, 1);
       canvas.width  = Math.round(vid.videoWidth  * r);
       canvas.height = Math.round(vid.videoHeight * r);
       canvas.getContext('2d').drawImage(vid, 0, 0, canvas.width, canvas.height);
@@ -640,7 +687,6 @@
           stopCamera();
           setTimeout(() => go('roll'), 300);
         } else {
-          // Update in-place — no full re-render
           const cc = document.querySelector('.cam-count');
           if (cc) cc.textContent = `${shots}/${TOTAL}`;
           const pb = document.querySelector('.prog-bar');
@@ -654,6 +700,14 @@
         if (btn) btn.disabled = false;
       }
       isSaving = false;
+    }
+
+    // ── Reveal: fetch all image_data ──
+    async function fetchRevealImages(ids) {
+      const { data } = await db.from('photos')
+        .select('id, image_data')
+        .in('id', ids);
+      if (data) data.forEach(p => { imgCache[p.id] = p.image_data; });
     }
 
     // ── Photo viewer ──
@@ -702,7 +756,7 @@
         document.getElementById('body').innerHTML = `
           <div class="full-banner">
             <div class="emoji">🎞️</div>
-            <div class="title">Carret ple!</div>
+            <div class="title">Carret revelat!</div>
             <div class="sub">Has fet ${TOTAL} fotos.<br>Ves a Roll per veure-les.</div>
             <button class="btn-primary" onclick="newRoll()">Nou carret →</button>
           </div>`;
@@ -717,6 +771,13 @@
         <div class="viewfinder">
           <video id="cam-video" autoplay playsinline muted></video>
           <div class="vf-flash"></div>
+          <button class="cam-flip" onclick="flipCamera()" aria-label="girar càmera">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                 stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+            </svg>
+          </button>
         </div>
         <div class="cam-bottom">
           <button class="shutter" onclick="takeShot()" aria-label="disparar"></button>
@@ -728,34 +789,51 @@
     }
 
     function renderRoll() {
-      const full = roll?.completed;
+      if (roll?.completed) {
+        const missing = photos.filter(p => !imgCache[p.id]).map(p => p.id);
+        if (missing.length > 0) {
+          showLoading('Revelant…');
+          fetchRevealImages(missing).then(() => renderRoll());
+          return;
+        }
+        renderReveal();
+        return;
+      }
+
       let cells = '';
       for (let i = 0; i < TOTAL; i++) {
         if (i < shots) {
-          cells += full
-            ? `<div class="cell taken unlocked" onclick="viewPhoto(${i})"></div>`
-            : `<div class="cell taken"></div>`;
-        } else if (i === shots && !full) {
-          cells += `<div class="cell next">+</div>`;
+          cells += `<div class="cell taken"></div>`;
+        } else if (i === shots) {
+          cells += `<div class="cell next" onclick="go('camera')">+</div>`;
         } else {
           cells += `<div class="cell empty">${String(i + 1).padStart(2, '0')}</div>`;
         }
       }
-      const meta = full
-        ? 'roll complet · toca una foto per veure-la'
-        : `roll 03 — ${shots} of ${TOTAL}`;
-      const footer = full ? `
-        <div class="roll-footer">
-          <button class="btn-primary">Enviar a impressió ↗</button>
-          <button class="btn-secondary" onclick="newRoll()">Nou carret</button>
-        </div>` : '';
       document.getElementById('body').innerHTML = `
         <div class="roll-head">
           <span class="rname">spring · 26</span>
-          <span class="rmeta">${meta}</span>
+          <span class="rmeta">roll 03 — ${shots} of ${TOTAL}</span>
+        </div>
+        <div class="roll-grid">${cells}</div>`;
+    }
+
+    function renderReveal() {
+      const cells = photos.map((p, i) =>
+        `<div class="cell revealed"
+          style="background-image:url('${imgCache[p.id]}');animation-delay:${(i * 0.15).toFixed(2)}s"
+          onclick="viewPhoto(${i})"></div>`
+      ).join('');
+      document.getElementById('body').innerHTML = `
+        <div class="roll-head">
+          <span class="rname">spring · 26</span>
+          <span class="rmeta">roll revelat · ${shots} fotos</span>
         </div>
         <div class="roll-grid">${cells}</div>
-        ${footer}`;
+        <div class="roll-footer">
+          <button class="btn-primary">Enviar a impressió ↗</button>
+          <button class="btn-secondary" onclick="newRoll()">Nou carret</button>
+        </div>`;
     }
 
     function renderDates() {
@@ -769,8 +847,8 @@
           .map(d => d.getDate())
       );
 
-      const long = ['January','February','March','April','May','June',
-                    'July','August','September','October','November','December'];
+      const long  = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
       const short = ['Jan','Feb','Mar','Apr','May','Jun',
                      'Jul','Aug','Sep','Oct','Nov','Dec'];
 
